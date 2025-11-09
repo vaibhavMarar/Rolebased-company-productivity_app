@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { api } from '../services/api';
 import { showToast } from '../utils/toast';
 import DayCard from './DayCard';
 import ProductivityChart from './ProductivityChart';
@@ -15,53 +15,11 @@ const getDayName = (dateString) => {
   return days[date.getDay()];
 };
 
-// Initialize with sample data if localStorage is empty
-const getInitialTasks = () => {
-  const today = new Date();
-  const day = today.getDay();
-  const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(today.setDate(diff));
-  
-  const weekDates = [];
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(monday);
-    date.setDate(monday.getDate() + i);
-    weekDates.push(date.toISOString().split('T')[0]);
-  }
-
-  return [
-    { id: 1, date: weekDates[0], day: getDayName(weekDates[0]), title: 'Complete project proposal', completed: false, time: '09:00' },
-    { id: 2, date: weekDates[0], day: getDayName(weekDates[0]), title: 'Review code changes', completed: true, time: '14:00' },
-    { id: 3, date: weekDates[1], day: getDayName(weekDates[1]), title: 'Team standup preparation', completed: false, time: '10:00' },
-    { id: 4, date: weekDates[2], day: getDayName(weekDates[2]), title: 'Update documentation', completed: false, time: '11:00' },
-    { id: 5, date: weekDates[3], day: getDayName(weekDates[3]), title: 'Fix bug in login flow', completed: true, time: '15:00' },
-  ];
-};
-
-const getInitialMeetings = () => {
-  const today = new Date();
-  const day = today.getDay();
-  const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(today.setDate(diff));
-  
-  const weekDates = [];
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(monday);
-    date.setDate(monday.getDate() + i);
-    weekDates.push(date.toISOString().split('T')[0]);
-  }
-
-  return [
-    { id: 1, date: weekDates[0], day: getDayName(weekDates[0]), title: 'Team meeting', time: '10:00', completed: true },
-    { id: 2, date: weekDates[0], day: getDayName(weekDates[0]), title: 'Client call', time: '14:00', completed: false },
-    { id: 3, date: weekDates[1], day: getDayName(weekDates[1]), title: 'Sprint planning', time: '11:00', completed: false },
-    { id: 4, date: weekDates[2], day: getDayName(weekDates[2]), title: 'Design review', time: '15:00', completed: true },
-  ];
-};
-
-const WeeklyCalendar = ({ onLogout }) => {
-  const [tasks, setTasks] = useLocalStorage('weekly_tasks', getInitialTasks());
-  const [meetings, setMeetings] = useLocalStorage('weekly_meetings', getInitialMeetings());
+const WeeklyCalendar = ({ onLogout, user }) => {
+  const [tasks, setTasks] = useState([]);
+  const [meetings, setMeetings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [view, setView] = useState('weekly'); // 'weekly' or 'calendar'
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     // Get Monday of current week
@@ -73,116 +31,146 @@ const WeeklyCalendar = ({ onLogout }) => {
     return monday;
   });
 
-  // Get next ID for new items
-  const getNextTaskId = useCallback(() => {
-    return tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
-  }, [tasks]);
-
-  const getNextMeetingId = useCallback(() => {
-    return meetings.length > 0 ? Math.max(...meetings.map(m => m.id)) + 1 : 1;
-  }, [meetings]);
-
-  // Local state handlers - no backend calls
-  const handleToggleTask = useCallback((id) => {
-    setTasks(tasks.map(t => {
-      if (t.id === id) {
-        return { ...t, completed: !t.completed };
-      }
-      return t;
-    }));
-  }, [tasks, setTasks]);
-
-  const handleToggleMeeting = useCallback((id) => {
-    setMeetings(meetings.map(m => {
-      if (m.id === id) {
-        return { ...m, completed: !m.completed };
-      }
-      return m;
-    }));
-  }, [meetings, setMeetings]);
-
-  // Create task locally
-  const handleCreateTask = useCallback((taskData) => {
-    const newTask = {
-      id: getNextTaskId(),
-      date: taskData.date,
-      day: getDayName(taskData.date),
-      title: taskData.title,
-      completed: false,
-      time: taskData.time || '09:00'
-    };
-    setTasks([...tasks, newTask]);
-    showToast('Task added successfully!', 'success');
-  }, [tasks, setTasks, getNextTaskId]);
-
-  // Create meeting locally
-  const handleCreateMeeting = useCallback((meetingData) => {
-    const newMeeting = {
-      id: getNextMeetingId(),
-      date: meetingData.date,
-      day: getDayName(meetingData.date),
-      title: meetingData.title,
-      time: meetingData.time || '10:00',
-      completed: false
-    };
-    setMeetings([...meetings, newMeeting]);
-    showToast('Meeting added successfully!', 'success');
-  }, [meetings, setMeetings, getNextMeetingId]);
-
-  // Update task locally
-  const handleUpdateTask = useCallback((id, taskData) => {
-    setTasks(tasks.map(t => {
-      if (t.id === id) {
-        return {
-          ...t,
-          title: taskData.title || t.title,
-          date: taskData.date || t.date,
-          day: taskData.date ? getDayName(taskData.date) : t.day,
-          time: taskData.time || t.time,
-          completed: taskData.completed !== undefined ? taskData.completed : t.completed
-        };
-      }
-      return t;
-    }));
-    showToast('Task updated successfully!', 'success');
-  }, [tasks, setTasks]);
-
-  // Update meeting locally
-  const handleUpdateMeeting = useCallback((id, meetingData) => {
-    setMeetings(meetings.map(m => {
-      if (m.id === id) {
-        return {
-          ...m,
-          title: meetingData.title || m.title,
-          date: meetingData.date || m.date,
-          day: meetingData.date ? getDayName(meetingData.date) : m.day,
-          time: meetingData.time || m.time,
-          completed: meetingData.completed !== undefined ? meetingData.completed : m.completed
-        };
-      }
-      return m;
-    }));
-    showToast('Meeting updated successfully!', 'success');
-  }, [meetings, setMeetings]);
-
-  // Delete task locally
-  const handleDeleteTask = useCallback((id) => {
-    setTasks(tasks.filter(t => t.id !== id));
-    showToast('Task deleted successfully!', 'success');
-  }, [tasks, setTasks]);
-
-  // Delete meeting locally
-  const handleDeleteMeeting = useCallback((id) => {
-    setMeetings(meetings.filter(m => m.id !== id));
-    showToast('Meeting deleted successfully!', 'success');
-  }, [meetings, setMeetings]);
-
-  // Stable callback for data refresh (no-op now, but kept for compatibility)
-  const handleDataChange = useCallback(() => {
-    // No backend call needed - state is already updated
+  // Fetch tasks and meetings from API
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const [tasksData, meetingsData] = await Promise.all([
+        api.getTasks(),
+        api.getMeetings()
+      ]);
+      setTasks(tasksData || []);
+      setMeetings(meetingsData || []);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError(err.message || 'Failed to load data');
+      showToast(err.message || 'Failed to load data', 'error');
+      // If it's an auth error, the API service will handle logout
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Get week dates - MUST be called before any conditional returns
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Toggle task completion
+  const handleToggleTask = useCallback(async (id) => {
+    try {
+      const updatedTask = await api.toggleTask(id);
+      setTasks(tasks.map(t => String(t.id) === String(id) ? updatedTask : t));
+      showToast('Task updated successfully!', 'success');
+    } catch (err) {
+      console.error('Error toggling task:', err);
+      showToast(err.message || 'Failed to update task', 'error');
+      // Refresh data on error
+      fetchData();
+    }
+  }, [tasks, fetchData]);
+
+  // Toggle meeting completion
+  const handleToggleMeeting = useCallback(async (id) => {
+    try {
+      const updatedMeeting = await api.toggleMeeting(id);
+      setMeetings(meetings.map(m => String(m.id) === String(id) ? updatedMeeting : m));
+      showToast('Meeting updated successfully!', 'success');
+    } catch (err) {
+      console.error('Error toggling meeting:', err);
+      showToast(err.message || 'Failed to update meeting', 'error');
+      // Refresh data on error
+      fetchData();
+    }
+  }, [meetings, fetchData]);
+
+  // Create task
+  const handleCreateTask = useCallback(async (taskData) => {
+    try {
+      const newTask = await api.createTask(taskData);
+      setTasks([...tasks, newTask]);
+      showToast('Task added successfully!', 'success');
+    } catch (err) {
+      console.error('Error creating task:', err);
+      showToast(err.message || 'Failed to create task', 'error');
+    }
+  }, [tasks]);
+
+  // Create meeting
+  const handleCreateMeeting = useCallback(async (meetingData) => {
+    try {
+      const newMeeting = await api.createMeeting(meetingData);
+      setMeetings([...meetings, newMeeting]);
+      showToast('Meeting added successfully!', 'success');
+    } catch (err) {
+      console.error('Error creating meeting:', err);
+      showToast(err.message || 'Failed to create meeting', 'error');
+    }
+  }, [meetings]);
+
+  // Update task
+  const handleUpdateTask = useCallback(async (id, taskData) => {
+    try {
+      const updatedTask = await api.updateTask(id, taskData);
+      setTasks(tasks.map(t => String(t.id) === String(id) ? updatedTask : t));
+      showToast('Task updated successfully!', 'success');
+    } catch (err) {
+      console.error('Error updating task:', err);
+      showToast(err.message || 'Failed to update task', 'error');
+      // Refresh data on error
+      fetchData();
+    }
+  }, [tasks, fetchData]);
+
+  // Update meeting
+  const handleUpdateMeeting = useCallback(async (id, meetingData) => {
+    try {
+      const updatedMeeting = await api.updateMeeting(id, meetingData);
+      setMeetings(meetings.map(m => String(m.id) === String(id) ? updatedMeeting : m));
+      showToast('Meeting updated successfully!', 'success');
+    } catch (err) {
+      console.error('Error updating meeting:', err);
+      showToast(err.message || 'Failed to update meeting', 'error');
+      // Refresh data on error
+      fetchData();
+    }
+  }, [meetings, fetchData]);
+
+  // Delete task
+  const handleDeleteTask = useCallback(async (id) => {
+    try {
+      await api.deleteTask(id);
+      setTasks(tasks.filter(t => String(t.id) !== String(id)));
+      showToast('Task deleted successfully!', 'success');
+    } catch (err) {
+      console.error('Error deleting task:', err);
+      showToast(err.message || 'Failed to delete task', 'error');
+      // Refresh data on error
+      fetchData();
+    }
+  }, [tasks, fetchData]);
+
+  // Delete meeting
+  const handleDeleteMeeting = useCallback(async (id) => {
+    try {
+      await api.deleteMeeting(id);
+      setMeetings(meetings.filter(m => String(m.id) !== String(id)));
+      showToast('Meeting deleted successfully!', 'success');
+    } catch (err) {
+      console.error('Error deleting meeting:', err);
+      showToast(err.message || 'Failed to delete meeting', 'error');
+      // Refresh data on error
+      fetchData();
+    }
+  }, [meetings, fetchData]);
+
+  // Refresh data
+  const handleDataChange = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Get week dates
   const weekDates = useMemo(() => {
     const dates = [];
     for (let i = 0; i < 7; i++) {
@@ -197,7 +185,7 @@ const WeeklyCalendar = ({ onLogout }) => {
     return dates;
   }, [currentWeekStart]);
 
-  // Filter tasks and meetings for current week - MUST be called before any conditional returns
+  // Filter tasks and meetings for current week
   const weekTasks = useMemo(() => {
     if (!weekDates.length) return [];
     const weekDateStrings = weekDates.map(d => d.date);
@@ -210,7 +198,7 @@ const WeeklyCalendar = ({ onLogout }) => {
     return meetings.filter(m => weekDateStrings.includes(m.date));
   }, [meetings, weekDates]);
 
-  // Format week range - MUST be called before any conditional returns
+  // Format week range
   const weekRange = useMemo(() => {
     if (!weekDates.length) return '';
     const start = weekDates[0].dateObj;
@@ -236,10 +224,71 @@ const WeeklyCalendar = ({ onLogout }) => {
     setCurrentWeekStart(monday);
   };
 
+  // Show loading state
+  if (loading && tasks.length === 0 && meetings.length === 0) {
+    return (
+      <div className="calendar-container">
+        <header className="calendar-header">
+          <h1>Weekly</h1>
+          <div className="header-actions">
+            <button onClick={onLogout} className="logout-button">Logout</button>
+          </div>
+        </header>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          minHeight: '50vh',
+          color: '#e0e0e0'
+        }}>
+          <div>Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error && tasks.length === 0 && meetings.length === 0) {
+    return (
+      <div className="calendar-container">
+        <header className="calendar-header">
+          <h1>Weekly</h1>
+          <div className="header-actions">
+            <button onClick={onLogout} className="logout-button">Logout</button>
+          </div>
+        </header>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          minHeight: '50vh',
+          color: '#e0e0e0',
+          gap: '1rem'
+        }}>
+          <div style={{ color: '#ff6b6b' }}>Error: {error}</div>
+          <button 
+            onClick={fetchData} 
+            style={{
+              padding: '0.5rem 1rem',
+              background: '#667eea',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="calendar-container">
       <header className="calendar-header">
-        <h1>Weekly</h1>
+        <h1>Weekly{user?.username ? ` - ${user.username}` : ''}</h1>
         <div className="header-actions">
           <div className="view-switcher">
             <button
@@ -258,6 +307,18 @@ const WeeklyCalendar = ({ onLogout }) => {
           <button onClick={onLogout} className="logout-button">Logout</button>
         </div>
       </header>
+      
+      {error && (
+        <div className="error-banner" style={{ marginBottom: '1rem' }}>
+          {error} - <button onClick={fetchData} style={{ 
+            background: 'transparent', 
+            border: 'none', 
+            color: '#ff6b6b', 
+            textDecoration: 'underline', 
+            cursor: 'pointer' 
+          }}>Retry</button>
+        </div>
+      )}
       
       {view === 'weekly' ? (
         <>
@@ -311,4 +372,3 @@ const WeeklyCalendar = ({ onLogout }) => {
 };
 
 export default WeeklyCalendar;
-

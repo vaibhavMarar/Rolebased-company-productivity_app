@@ -13,9 +13,9 @@ const Login = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      const { token } = await api.login(username, password);
-      localStorage.setItem('token', token);
-      onLogin();
+      const data = await api.login(username, password);
+      // onLogin is called with user data
+      onLogin(data.user || { username });
     } catch (err) {
       setError(err.message || 'Login failed');
     } finally {

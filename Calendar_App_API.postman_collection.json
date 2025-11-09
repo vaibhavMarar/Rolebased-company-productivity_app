@@ -1,0 +1,513 @@
+{
+	"info": {
+		"_postman_id": "calendar-app-api-collection",
+		"name": "Calendar App API",
+		"description": "Complete API collection for Calendar App with JWT authentication",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/health",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"health"
+					]
+				},
+				"description": "Check if server is running"
+			},
+			"response": []
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set(\"token\", response.token);",
+									"    console.log(\"Token saved:\", response.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"demo\",\n  \"password\": \"demo123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login with credentials to get JWT token. Token is automatically saved to environment variable."
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Token (Public)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"{{token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/verify-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"verify-token"
+							]
+						},
+						"description": "Verify token validity without authentication"
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Token (Protected)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/verify",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"verify"
+							]
+						},
+						"description": "Verify token with authentication required"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Logout (client should remove token from localStorage)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tasks",
+			"item": [
+				{
+					"name": "Get All Tasks",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/tasks",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"tasks"
+							]
+						},
+						"description": "Get all tasks"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Task",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Test Task from Postman\",\n  \"date\": \"2024-12-20\",\n  \"time\": \"14:00\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/tasks",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"tasks"
+							]
+						},
+						"description": "Create a new task. Date must be today or in the future."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Task",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Task Title\",\n  \"date\": \"2024-12-21\",\n  \"time\": \"15:30\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/tasks/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"tasks",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "",
+									"description": "Task ID from MongoDB"
+								}
+							]
+						},
+						"description": "Update an existing task"
+					},
+					"response": []
+				},
+				{
+					"name": "Toggle Task",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/tasks/:id/toggle",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"tasks",
+								":id",
+								"toggle"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "",
+									"description": "Task ID from MongoDB"
+								}
+							]
+						},
+						"description": "Toggle task completion status"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Task",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/tasks/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"tasks",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "",
+									"description": "Task ID from MongoDB"
+								}
+							]
+						},
+						"description": "Delete a task"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Meetings",
+			"item": [
+				{
+					"name": "Get All Meetings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/meetings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meetings"
+							]
+						},
+						"description": "Get all meetings"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Meeting",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Team Meeting from Postman\",\n  \"date\": \"2024-12-20\",\n  \"time\": \"16:00\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/meetings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meetings"
+							]
+						},
+						"description": "Create a new meeting. Date must be today or in the future."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Meeting",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Meeting Title\",\n  \"date\": \"2024-12-22\",\n  \"time\": \"17:00\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/meetings/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meetings",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "",
+									"description": "Meeting ID from MongoDB"
+								}
+							]
+						},
+						"description": "Update an existing meeting"
+					},
+					"response": []
+				},
+				{
+					"name": "Toggle Meeting",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/meetings/:id/toggle",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meetings",
+								":id",
+								"toggle"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "",
+									"description": "Meeting ID from MongoDB"
+								}
+							]
+						},
+						"description": "Toggle meeting completion status"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Meeting",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/meetings/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"meetings",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "",
+									"description": "Meeting ID from MongoDB"
+								}
+							]
+						},
+						"description": "Delete a meeting"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Error Testing",
+			"item": [
+				{
+					"name": "Get Tasks - No Token",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/tasks",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"tasks"
+							]
+						},
+						"description": "Test protected endpoint without token (should return 401)"
+					},
+					"response": []
+				},
+				{
+					"name": "Login - Invalid Credentials",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"wrong\",\n  \"password\": \"wrong\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Test login with invalid credentials (should return 401)"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000"
+		},
+		{
+			"key": "token",
+			"value": ""
+		}
+	]
+}
+

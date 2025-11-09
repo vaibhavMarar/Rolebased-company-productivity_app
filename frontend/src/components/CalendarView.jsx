@@ -185,7 +185,7 @@ const CalendarView = ({
                 <div className="calendar-day-events">
                   {allEvents.slice(0, 3).map((event, idx) => (
                     <motion.div
-                      key={event.id}
+                      key={`${event.type}-${event.id}-${date.toISOString()}-${idx}`}
                       className={`calendar-event ${event.type} ${event.completed ? 'completed' : ''}`}
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
@@ -268,7 +268,7 @@ const CalendarView = ({
                     >
                       {hourEvents.map((event, idx) => (
                         <motion.div
-                          key={event.id}
+                          key={`${event.type}-${event.id}-${date.toISOString()}-${hour}-${idx}`}
                           className={`calendar-week-event ${event.type} ${event.completed ? 'completed' : ''}`}
                           initial={{ scale: 0.9, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}

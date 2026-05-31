@@ -1,4 +1,6 @@
 // In-memory data storage
+const { formatDateToLocal, parseLocalDate } = require('./utils/dateUtils');
+
 // Helper function to get dates for current week
 const getCurrentWeekDates = () => {
   const today = new Date();
@@ -14,7 +16,7 @@ const getCurrentWeekDates = () => {
     date.setDate(monday.getDate() + i);
     dates.push({
       day: days[i],
-      date: date.toISOString().split('T')[0],
+      date: formatDateToLocal(date),
       dateObj: date
     });
   }
@@ -49,9 +51,9 @@ let meetings = [
 let nextTaskId = 9;
 let nextMeetingId = 9;
 
-// Helper to get day name from date
+// Helper to get day name from date string (YYYY-MM-DD)
 const getDayName = (dateString) => {
-  const date = new Date(dateString);
+  const date = parseLocalDate(dateString);
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   return days[date.getDay()];
 };

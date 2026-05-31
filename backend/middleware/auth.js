@@ -65,6 +65,32 @@ const generateToken = (payload) => {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
+// Admin-only middleware (must be used after authenticateToken)
+const requireAdmin = (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ 
+        error: 'Authentication required',
+        code: 'NO_AUTH'
+      });
+    }
+
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        error: 'Admin access required',
+        code: 'FORBIDDEN'
+      });
+    }
+
+    next();
+  } catch (error) {
+    return res.status(500).json({ 
+      error: 'Authorization error',
+      code: 'AUTH_ERROR'
+    });
+  }
+};
+
 // Verify token without middleware (for token verification endpoint)
 const verifyToken = (token) => {
   try {
@@ -82,6 +108,7 @@ const verifyToken = (token) => {
 
 module.exports = { 
   authenticateToken, 
+  requireAdmin,
   generateToken,
   verifyToken,
   JWT_SECRET,

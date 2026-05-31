@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDateToLocal, getTodayDate } from '../utils/dateUtils';
 
 const EventModal = ({ isOpen, onClose, event, type, onSave, onDelete, defaultDate }) => {
   const [title, setTitle] = useState('');
@@ -14,9 +15,10 @@ const EventModal = ({ isOpen, onClose, event, type, onSave, onDelete, defaultDat
         setDate(event.date || '');
         setTime(event.time || '09:00');
       } else {
+        // Use defaultDate if provided, otherwise use today
         const dateToUse = defaultDate 
-          ? (typeof defaultDate === 'string' ? defaultDate : defaultDate.toISOString().split('T')[0])
-          : new Date().toISOString().split('T')[0];
+          ? (typeof defaultDate === 'string' ? defaultDate : formatDateToLocal(defaultDate))
+          : getTodayDate();
         setTitle('');
         setDate(dateToUse);
         setTime('09:00');
@@ -25,20 +27,12 @@ const EventModal = ({ isOpen, onClose, event, type, onSave, onDelete, defaultDat
     }
   }, [event, isOpen, defaultDate]);
 
-  // Get today's date in YYYY-MM-DD format for min attribute
-  const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  };
-
   // Check if date is in the past
   const isDateInPast = (dateString) => {
     if (!dateString) return false;
-    const selectedDate = new Date(dateString);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    selectedDate.setHours(0, 0, 0, 0);
-    return selectedDate < today;
+    // Compare date strings directly (YYYY-MM-DD format)
+    const today = getTodayDate();
+    return dateString < today;
   };
 
   const handleSubmit = (e) => {

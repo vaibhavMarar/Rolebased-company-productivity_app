@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import EventModal from './EventModal';
+import { formatDateToLocal, parseLocalDate } from '../utils/dateUtils';
 
 const CalendarView = ({ 
   tasks, 
@@ -62,14 +63,14 @@ const CalendarView = ({
   }, [currentDate, viewMode]);
 
   const getEventsForDate = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatDateToLocal(date);
     const dayTasks = tasks.filter(t => t.date === dateStr);
     const dayMeetings = meetings.filter(m => m.date === dateStr);
     return { tasks: dayTasks, meetings: dayMeetings };
   };
 
   const formatDate = (date) => {
-    return date.toISOString().split('T')[0];
+    return formatDateToLocal(date);
   };
 
   const formatTime = (time) => {
@@ -85,7 +86,8 @@ const CalendarView = ({
     if (event) {
       setSelectedEvent(event);
       setEventType(event.type || 'task');
-      setSelectedDate(new Date(event.date));
+      // Parse the date string to a Date object in local timezone
+      setSelectedDate(event.date ? parseLocalDate(event.date) : date);
       setIsModalOpen(true);
     } else {
       setSelectedDate(date);
@@ -95,21 +97,14 @@ const CalendarView = ({
   };
 
   const handleSave = (eventData) => {
-    // Validate date before saving
+    // Validate date before saving - ensure date is a string (YYYY-MM-DD)
     const finalData = {
       ...eventData,
       date: eventData.date || formatDate(selectedDate || new Date())
     };
     
-    const eventDate = new Date(finalData.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    eventDate.setHours(0, 0, 0, 0);
-    
-    if (eventDate < today) {
-      alert('Cannot assign a ' + eventType + ' before today');
-      return;
-    }
+    // Date validation is already handled in EventModal, so we can proceed
+    // The date is already in YYYY-MM-DD format as a string
 
     if (selectedEvent) {
       // Update existing event

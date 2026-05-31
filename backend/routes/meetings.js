@@ -1,6 +1,7 @@
 const express = require('express');
 const { authenticateToken } = require('../middleware/auth');
 const Meeting = require('../models/Meeting');
+const { isDateNotInPast } = require('../utils/dateUtils');
 
 const router = express.Router();
 
@@ -27,13 +28,13 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Title and date are required' });
     }
 
-    // Validate date is not in the past
-    const meetingDate = new Date(date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    meetingDate.setHours(0, 0, 0, 0);
-    
-    if (meetingDate < today) {
+    // Validate date format (YYYY-MM-DD)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ error: 'Date must be in YYYY-MM-DD format' });
+    }
+
+    // Validate date is not in the past (compare as strings to avoid timezone issues)
+    if (!isDateNotInPast(date)) {
       return res.status(400).json({ error: 'Cannot assign a meeting before today' });
     }
 
@@ -74,12 +75,13 @@ router.put('/:id', async (req, res) => {
 
     // Validate date is not in the past if date is being updated
     if (date) {
-      const meetingDate = new Date(date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      meetingDate.setHours(0, 0, 0, 0);
-      
-      if (meetingDate < today) {
+      // Validate date format (YYYY-MM-DD)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(400).json({ error: 'Date must be in YYYY-MM-DD format' });
+      }
+
+      // Validate date is not in the past (compare as strings to avoid timezone issues)
+      if (!isDateNotInPast(date)) {
         return res.status(400).json({ error: 'Cannot assign a meeting before today' });
       }
     }

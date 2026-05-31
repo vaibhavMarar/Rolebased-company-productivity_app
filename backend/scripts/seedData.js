@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const Task = require('../models/Task');
 const Meeting = require('../models/Meeting');
+const { formatDateToLocal } = require('../utils/dateUtils');
 
 // Load environment variables
 dotenv.config();
@@ -19,7 +20,7 @@ const getCurrentWeekDates = () => {
   for (let i = 0; i < 7; i++) {
     const date = new Date(monday);
     date.setDate(monday.getDate() + i);
-    dates.push(date.toISOString().split('T')[0]);
+    dates.push(formatDateToLocal(date));
   }
   
   return dates;

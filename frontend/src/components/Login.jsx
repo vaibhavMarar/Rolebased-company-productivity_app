@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { api } from '../services/api';
 
-const Login = ({ onLogin }) => {
+const Login = ({ onLogin, onSwitchToRegister }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -56,10 +56,24 @@ const Login = ({ onLogin }) => {
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
-        <div className="demo-info">
-          <p>Demo credentials:</p>
-          <p><strong>Username:</strong> demo</p>
-          <p><strong>Password:</strong> demo123</p>
+        <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+          <p style={{ color: '#999', fontSize: '0.9rem' }}>
+            Don't have an account?{' '}
+            <button
+              type="button"
+              onClick={onSwitchToRegister}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#667eea',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                fontSize: '0.9rem'
+              }}
+            >
+              Register
+            </button>
+          </p>
         </div>
       </div>
     </div>

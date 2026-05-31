@@ -422,6 +422,10 @@ body {
 
 .item {
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .checkbox-label {
@@ -432,6 +436,7 @@ body {
   padding: 0.5rem;
   border-radius: 4px;
   transition: background-color 0.2s;
+  flex: 1;
 }
 
 .checkbox-label:hover {
@@ -484,6 +489,50 @@ body {
 .meeting-title.completed {
   text-decoration: line-through;
   color: #666;
+}
+
+/* Item Actions (Edit/Delete buttons) */
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.item:hover .item-actions {
+  opacity: 1;
+}
+
+.btn-edit,
+.btn-delete-item {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+}
+
+.btn-edit:hover {
+  background-color: #2a2a2a;
+  transform: scale(1.1);
+}
+
+.btn-delete-item:hover {
+  background-color: #3a1f1f;
+  transform: scale(1.1);
+}
+
+.btn-edit:active,
+.btn-delete-item:active {
+  transform: scale(0.95);
 }
 
 /* Weekly Header Styles */

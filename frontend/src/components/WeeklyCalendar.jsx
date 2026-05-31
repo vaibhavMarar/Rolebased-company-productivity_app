@@ -5,17 +5,19 @@ import { showToast } from '../utils/toast';
 import DayCard from './DayCard';
 import ProductivityChart from './ProductivityChart';
 import CalendarView from './CalendarView';
+import EventModal from './EventModal';
+import { formatDateToLocal, parseLocalDate } from '../utils/dateUtils';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-// Helper to get day name from date
+// Helper to get day name from date string (YYYY-MM-DD)
 const getDayName = (dateString) => {
-  const date = new Date(dateString);
+  const date = parseLocalDate(dateString);
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   return days[date.getDay()];
 };
 
-const WeeklyCalendar = ({ onLogout, user }) => {
+const WeeklyCalendar = ({ onLogout, user, onBackToDashboard }) => {
   const [tasks, setTasks] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +32,9 @@ const WeeklyCalendar = ({ onLogout, user }) => {
     monday.setHours(0, 0, 0, 0);
     return monday;
   });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [eventType, setEventType] = useState('task'); // 'task' or 'meeting'
 
   // Fetch tasks and meetings from API
   const fetchData = useCallback(async () => {
@@ -165,6 +170,52 @@ const WeeklyCalendar = ({ onLogout, user }) => {
     }
   }, [meetings, fetchData]);
 
+  // Handle edit task from DayCard
+  const handleEditTask = useCallback((task) => {
+    setSelectedEvent(task);
+    setEventType('task');
+    setIsModalOpen(true);
+  }, []);
+
+  // Handle edit meeting from DayCard
+  const handleEditMeeting = useCallback((meeting) => {
+    setSelectedEvent(meeting);
+    setEventType('meeting');
+    setIsModalOpen(true);
+  }, []);
+
+  // Handle save from EventModal (for weekly view)
+  const handleSaveEvent = useCallback((eventData) => {
+    if (selectedEvent) {
+      // Update existing event
+      if (eventType === 'task') {
+        handleUpdateTask(selectedEvent.id, eventData);
+      } else {
+        handleUpdateMeeting(selectedEvent.id, eventData);
+      }
+    } else {
+      // Create new event (shouldn't happen from DayCard, but handle it)
+      if (eventType === 'task') {
+        handleCreateTask(eventData);
+      } else {
+        handleCreateMeeting(eventData);
+      }
+    }
+    setIsModalOpen(false);
+    setSelectedEvent(null);
+  }, [selectedEvent, eventType, handleUpdateTask, handleUpdateMeeting, handleCreateTask, handleCreateMeeting]);
+
+  // Handle delete from EventModal (for weekly view)
+  const handleDeleteEvent = useCallback((id) => {
+    if (eventType === 'task') {
+      handleDeleteTask(id);
+    } else {
+      handleDeleteMeeting(id);
+    }
+    setIsModalOpen(false);
+    setSelectedEvent(null);
+  }, [eventType, handleDeleteTask, handleDeleteMeeting]);
+
   // Refresh data
   const handleDataChange = useCallback(() => {
     fetchData();
@@ -178,7 +229,7 @@ const WeeklyCalendar = ({ onLogout, user }) => {
       date.setDate(currentWeekStart.getDate() + i);
       dates.push({
         day: DAYS[i],
-        date: date.toISOString().split('T')[0],
+        date: formatDateToLocal(date),
         dateObj: date
       });
     }
@@ -304,6 +355,22 @@ const WeeklyCalendar = ({ onLogout, user }) => {
               Calendar
             </button>
           </div>
+          {onBackToDashboard && (
+            <button 
+              onClick={onBackToDashboard} 
+              style={{
+                padding: '0.5rem 1rem',
+                background: '#4caf50',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                marginRight: '0.5rem'
+              }}
+            >
+              Back to Dashboard
+            </button>
+          )}
           <button onClick={onLogout} className="logout-button">Logout</button>
         </div>
       </header>
@@ -349,6 +416,10 @@ const WeeklyCalendar = ({ onLogout, user }) => {
                   meetings={weekMeetings}
                   onToggleTask={handleToggleTask}
                   onToggleMeeting={handleToggleMeeting}
+                  onEditTask={handleEditTask}
+                  onEditMeeting={handleEditMeeting}
+                  onDeleteTask={handleDeleteTask}
+                  onDeleteMeeting={handleDeleteMeeting}
                 />
               ))}
             </motion.div>
@@ -367,6 +438,20 @@ const WeeklyCalendar = ({ onLogout, user }) => {
           onDeleteMeeting={handleDeleteMeeting}
         />
       )}
+
+      {/* EventModal for editing from DayCard */}
+      <EventModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedEvent(null);
+        }}
+        event={selectedEvent ? { ...selectedEvent, date: selectedEvent.date || formatDateToLocal(new Date()) } : null}
+        type={eventType === 'task' ? 'Task' : 'Meeting'}
+        onSave={handleSaveEvent}
+        onDelete={handleDeleteEvent}
+        defaultDate={selectedEvent?.date ? parseLocalDate(selectedEvent.date) : null}
+      />
     </div>
   );
 };

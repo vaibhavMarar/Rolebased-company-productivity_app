@@ -1,0 +1,18 @@
+{
+  "name": "calendar-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Weekly calendar app — Vercel monorepo root",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "start:backend": "npm start --prefix backend",
+    "vercel:dev": "vercel dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "vercel": "^41.6.0"
+  }
+}

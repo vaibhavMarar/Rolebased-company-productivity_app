@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
 import Login from './components/Login';
-import WeeklyCalendar from './components/WeeklyCalendar';
+import Register from './components/Register';
+import AdminDashboard from './components/AdminDashboard';
+import EmployeeDashboard from './components/EmployeeDashboard';
 import { api } from './services/api';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [showRegister, setShowRegister] = useState(false);
 
   // Verify token on app load
   useEffect(() => {
@@ -113,9 +116,21 @@ function App() {
     <ErrorBoundary>
       <div className="app">
         {isAuthenticated ? (
-          <WeeklyCalendar onLogout={handleLogout} user={user} />
+          user?.role === 'admin' ? (
+            <AdminDashboard onLogout={handleLogout} user={user} />
+          ) : (
+            <EmployeeDashboard onLogout={handleLogout} user={user} />
+          )
+        ) : showRegister ? (
+          <Register 
+            onRegister={handleLogin} 
+            onSwitchToLogin={() => setShowRegister(false)} 
+          />
         ) : (
-          <Login onLogin={handleLogin} />
+          <Login 
+            onLogin={handleLogin} 
+            onSwitchToRegister={() => setShowRegister(true)} 
+          />
         )}
       </div>
     </ErrorBoundary>

@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDateToLocal } from '../utils/dateUtils';
 
-const DayCard = ({ day, date, tasks, meetings, onToggleTask, onToggleMeeting }) => {
+const DayCard = ({ day, date, tasks, meetings, onToggleTask, onToggleMeeting, onEditTask, onEditMeeting, onDeleteTask, onDeleteMeeting }) => {
   const [expanded, setExpanded] = useState(false);
 
-  const dateStr = date ? date.toISOString().split('T')[0] : null;
+  const dateStr = date ? formatDateToLocal(date) : null;
   const dayTasks = useMemo(() => {
     if (dateStr) {
       return tasks.filter(t => t.date === dateStr).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
@@ -99,6 +100,30 @@ const DayCard = ({ day, date, tasks, meetings, onToggleTask, onToggleMeeting }) 
                           </span>
                         </div>
                       </label>
+                      <div className="item-actions">
+                        <button
+                          className="btn-edit"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditTask(task);
+                          }}
+                          title="Edit task"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          className="btn-delete-item"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`Are you sure you want to delete "${task.title}"?`)) {
+                              onDeleteTask(task.id);
+                            }
+                          }}
+                          title="Delete task"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </motion.li>
                   ))}
                 </ul>
@@ -132,6 +157,30 @@ const DayCard = ({ day, date, tasks, meetings, onToggleTask, onToggleMeeting }) 
                           </span>
                         </div>
                       </label>
+                      <div className="item-actions">
+                        <button
+                          className="btn-edit"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditMeeting(meeting);
+                          }}
+                          title="Edit meeting"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          className="btn-delete-item"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`Are you sure you want to delete "${meeting.title}"?`)) {
+                              onDeleteMeeting(meeting.id);
+                            }
+                          }}
+                          title="Delete meeting"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </motion.li>
                   ))}
                 </ul>

@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
 
 // Token storage keys
 const TOKEN_KEY = 'token';
@@ -105,8 +105,27 @@ const handleResponse = async (response) => {
 
 export const api = {
   // Authentication methods
+  register: async (userData) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+
+    const data = await handleResponse(response);
+    
+    // Store token and user info
+    if (data.token) {
+      setAuth(data.token, data.user);
+    }
+    
+    return data;
+  },
+
   login: async (username, password) => {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -128,7 +147,7 @@ export const api = {
     try {
       const token = getToken();
       if (token) {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
+        await fetch(`${API_BASE_URL}/api/auth/logout`, {
           method: 'POST',
           headers: getAuthHeaders(),
         });
@@ -147,7 +166,7 @@ export const api = {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/verify-token`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -287,6 +306,77 @@ export const api = {
   deleteMeeting: async (id) => {
     const response = await fetch(`${API_BASE_URL}/api/meetings/${id}`, {
       method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(response);
+  },
+
+  // User management (admin only)
+  getUsers: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/users`, {
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(response);
+  },
+
+  getUser: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(response);
+  },
+
+  createUser: async (userData) => {
+    const response = await fetch(`${API_BASE_URL}/api/users`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(userData),
+    });
+
+    return handleResponse(response);
+  },
+
+  updateUser: async (id, userData) => {
+    const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(userData),
+    });
+
+    return handleResponse(response);
+  },
+
+  deleteUser: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(response);
+  },
+
+  // Analytics
+  getPersonalAnalytics: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/analytics/personal`, {
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(response);
+  },
+
+  getCompanyAnalytics: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/analytics/company`, {
+      headers: getAuthHeaders(),
+    });
+
+    return handleResponse(response);
+  },
+
+  getUserAnalytics: async (userId) => {
+    const response = await fetch(`${API_BASE_URL}/api/analytics/user/${userId}`, {
       headers: getAuthHeaders(),
     });
 

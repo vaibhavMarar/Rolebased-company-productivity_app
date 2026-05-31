@@ -1,8 +1,13 @@
 const mongoose = require('mongoose');
 
 // Helper to get day name from date
+// Fix: Parse date string directly to avoid timezone issues
+// When using new Date('YYYY-MM-DD'), it's interpreted as UTC midnight,
+// which can shift to the previous day in local timezones
 const getDayName = (dateString) => {
-  const date = new Date(dateString);
+  // Parse YYYY-MM-DD format directly without timezone conversion
+  const [year, month, day] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day); // month is 0-indexed
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   return days[date.getDay()];
 };
